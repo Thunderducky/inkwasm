@@ -4,45 +4,163 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+    <title>Inkwell</title>
+    <script
+    src="https://code.jquery.com/jquery-3.4.1.min.js"
+    integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+    crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="codemirror.css">
+    <link rel="stylesheet" href="editor.css">
+    <script type="text/javascript" src="codemirror.js"> </script>
+    <style>
+        #container {
+            display:flex;
+        }
+        #editor, #player {
+            border: 1px black solid;
+            flex-grow:1;
+            width:50%;
+            box-sizing: border-box;
+        }
+        #player {
+            padding:10px;
+        }
+        body {
+            color: #E6E1DC;
+            background-color: #202020;
+        }
+    </style>
 </head>
 <body>
-    <script type="text/javascript">
-        window.Module = {};
-        window.Module.onRuntimeInitialized = () => {
-            const config = {
-                vfsPrefix: "dlls",
-                deployPrefix: "dlls",
-                enableDebugging: 0
-            };
-            const assemblies = [
-                'ink_compiler.dll',
-                'ink-engine-runtime.dll',
-                'wasm-target.dll',
-                'mscorlib.dll',
-                'WebAssembly.Bindings.dll',
-                'netstandard.dll',
-                'System.dll',
-                'System.Core.dll'
-            ];
-            
-            MONO.mono_load_runtime_and_bcl(
-                config.vfsPrefix,
-                config.deployPrefix,
-                config.enableDebugging,
-                assemblies,
-                () => {
-                    Module.mono_bindings_init("[WebAssembly.Bindings]WebAssembly.Runtime");
-                    console.log("No whammies")
-                    const compile = Module.mono_bind_static_method("[wasm-target] CompileHelper:JSON");
-                    // Next we can load this into the other stuff, I want to keep it handy, but I bet this runtime is
-                    console.log(compile(`
-                        === Hello World
-                    `));
+    <h1>Inkwell</h1>
+    <div id="container">
+        <div id="editor">
+            <textarea name="" id="gameText" cols="30" rows="10" placeholder="text goes here"></textarea>
+        </div>
+        <div id="player">
+            <div id="inner-player"></div>
+        </div>
+    </div>
+    <div>
+        <button id="submitme">Submit</button>
+        <h3>Errors</h3>
+        <pre id="error-display">
+        </pre>
+        <h3>Warnings</h3>
+        <pre id="warning-display">
+
+        </pre>
+    </div>
+    <script type="text/javascript" src="https://unpkg.com/inkjs"></script>
+    <script>
+        var story;
+        class Compiler {
+            ready = false;
+            worker = null;
+            init = (onComplete = () => {}) => {
+                return new Promise((resolve, reject) => {
+                    this.worker = new Worker("worker.js");
+                    this.ready = false;
+                    this.worker.onmessage = (e) => {
+                        if(e.data === "ready"){
+                            this.ready = true;
+                            resolve();
+                        } else if(this.ready){
+                            onComplete(e.data);
+                        }
+                    }
+                })
+            }
+            submit = (text) => {
+                this.worker.postMessage(text);
+            }
+
+        }
+        const a = new Compiler();
+        a.init(response => { 
+            console.log(response)
+            if(response.errors.length > 0 || response.warnings.length > 0){
+                console.log("Errors", response.errors);
+                $("#error-display").text(response.errors.join('\n'))
+                
+                console.log("Warnings", response.warnings);
+                $("#warning-display").text(response.warnings.join('\n'))
+            } else {
+                // should call a refresh story function here
+                console.log(response.story);
+                // story = new inkjs.Story(response.story)
+                processStoryContent(response.story);
+                $("#error-display").text("");
+                
+                console.log("Warnings", response.warnings);
+                $("#warning-display").text("");
+            }
+        })
+        const textArea = document.getElementById("gameText");
+        textArea.value  = localStorage.getItem("text") || "";
+        const editor = CodeMirror.fromTextArea(textArea, { lineNumbers: true, theme:"ambiance"})
+        $("#submitme").click(() => {
+            console.log("CLICK");
+            if(a.ready){
+                console.log("Submit");
+                editor.save();
+                
+                var text = $("#gameText").val()
+                localStorage.setItem("text", text);
+                console.log(text);
+                a.submit(text);
+            }
+        })
+
+        function contentBottomEdgeY(){
+            return 0;
+        }
+
+        function processStoryContent(storyContent){
+            $("#inner-player").empty();
+            var story = new inkjs.Story(storyContent);
+            // process global tags will go here
+
+            var outerStoryContainer = $("#inner-player");
+            var storyContainer = $("#inner-player");
+        
+            continueStory(true);
+            function continueStory(firstTime){
+                var paragraphIndex = 0;
+                var delay = 0.0;
+
+                var previousBottomEdge = firstTime? 0 : contentBottomEdgeY();
+                while(story.canContinue){
+                    var paragraphText = story.Continue();
+                    var tags = story.currentTags;
+
+                    // add any special tags with this line
+
+                    storyContainer.append(
+                        $(`<p>${paragraphText}</p>`)
+                    );
+                    
+                    // add any custom classes goes here
+                    // Show after(delay, paragraphElement)
                 }
-            )
-        };
+                story.currentChoices.forEach(function(choice){
+                    const element = $(`<p class="choice"><a href="">${choice.text}</a></p>`);
+                    storyContainer.append(
+                        element  
+                    );
+                    // include delays
+                    element.find("a").click(event => {
+                        event.preventDefault();
+                        $("p.choice").remove();
+                        story.ChooseChoiceIndex(choice.index);
+                        continueStory();
+                    });
+                });
+
+            }
+        }
+
+        
     </script>
-    <script async src="mono.js"></script>
 </body>
 </html>
