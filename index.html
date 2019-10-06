@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+    <script type="text/javascript">
+        window.Module = {};
+        window.Module.onRuntimeInitialized = () => {
+            const config = {
+                vfsPrefix: "dlls",
+                deployPrefix: "dlls",
+                enableDebugging: 0
+            };
+            const assemblies = [
+                'ink_compiler.dll',
+                'ink-engine-runtime.dll',
+                'wasm-target.dll',
+                'mscorlib.dll',
+                'WebAssembly.Bindings.dll',
+                'netstandard.dll',
+                'System.dll',
+                'System.Core.dll'
+            ];
+            
+            MONO.mono_load_runtime_and_bcl(
+                config.vfsPrefix,
+                config.deployPrefix,
+                config.enableDebugging,
+                assemblies,
+                () => {
+                    Module.mono_bindings_init("[WebAssembly.Bindings]WebAssembly.Runtime");
+                    console.log("No whammies")
+                    const compile = Module.mono_bind_static_method("[wasm-target] CompileHelper:JSON");
+                    // Next we can load this into the other stuff, I want to keep it handy, but I bet this runtime is
+                    console.log(compile(`
+                        === Hello World
+                    `));
+                }
+            )
+        };
+    </script>
+    <script async src="mono.js"></script>
+</body>
+</html>
