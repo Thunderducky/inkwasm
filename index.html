@@ -29,6 +29,24 @@
             color: #E6E1DC;
             background-color: #202020;
         }
+        .inner-player .hide {
+            opacity: 0.0;
+        }
+        .inner-player * {
+            opacity: 1.0;
+            transition: opacity 1.0s;
+        }
+        a {
+            font-weight: 700;
+            color: #b97c2c;
+            font-family: sans-serif;
+            transition: color 0.6s;
+            text-decoration: none;
+        }
+        a:hover {
+            color: white;
+            transition: color 0.3s;
+        }
     </style>
 </head>
 <body>
@@ -79,6 +97,7 @@
         const a = new Compiler();
         a.init(response => { 
             console.log(response)
+            console.log(response.story.globalTags);
             if(response.errors.length > 0 || response.warnings.length > 0){
                 console.log("Errors", response.errors);
                 $("#error-display").text(response.errors.join('\n'))
@@ -115,6 +134,10 @@
         function contentBottomEdgeY(){
             return 0;
         }
+        function showAfter(delay, element){
+            $(element).addClass("hide");
+            setTimeout(() => $(element).removeClass("hide"), delay);
+        }
 
         function processStoryContent(storyContent){
             $("#inner-player").empty();
@@ -135,19 +158,21 @@
                     var tags = story.currentTags;
 
                     // add any special tags with this line
-
+                    const paragraph = $(`<p>${paragraphText}</p>`)
                     storyContainer.append(
-                        $(`<p>${paragraphText}</p>`)
+                        paragraph
                     );
-                    
-                    // add any custom classes goes here
-                    // Show after(delay, paragraphElement)
+
+                    showAfter(delay, paragraph);
+                    delay += 200.0;
                 }
                 story.currentChoices.forEach(function(choice){
                     const element = $(`<p class="choice"><a href="">${choice.text}</a></p>`);
                     storyContainer.append(
                         element  
                     );
+                    showAfter(delay, element);
+                    delay += 200;
                     // include delays
                     element.find("a").click(event => {
                         event.preventDefault();
