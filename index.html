@@ -1,41 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Inkwell</title>
-    <script
-    src="https://code.jquery.com/jquery-3.4.1.min.js"
-    integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
-    crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="codemirror.css">
     <link rel="stylesheet" href="editor.css">
     <script type="text/javascript" src="codemirror.js"> </script>
     <style>
-        #container {
-            display:flex;
+        html,
+        body,
+        #super-container {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
         }
-        #editor, #player {
-            border: 1px black solid;
-            flex-grow:1;
-            width:50%;
-            box-sizing: border-box;
-        }
-        #player {
-            padding:10px;
-        }
+
         body {
             color: #E6E1DC;
             background-color: #202020;
+            height:100vh;
         }
+
+        #super-container {
+            box-sizing: border-box;
+            padding: 15px;
+            display:flex;
+            flex-direction:column;
+        }
+        #container {
+            display:flex;
+            height:calc(100vh - 60px);
+        }
+
+        #editor, #player {
+            width:50%;
+            
+        }
+        #editor {
+            height:100%;
+        }
+
+        #inner-editor {
+            height:80%;
+        }
+
         .inner-player .hide {
             opacity: 0.0;
         }
+
         .inner-player * {
             opacity: 1.0;
             transition: opacity 1.0s;
         }
+
         a {
             font-weight: 700;
             color: #b97c2c;
@@ -43,31 +66,56 @@
             transition: color 0.6s;
             text-decoration: none;
         }
+
         a:hover {
             color: white;
             transition: color 0.3s;
         }
+
+        #player {
+            box-shadow: inset 0 0 10px black;
+            height:80%;
+            overflow:auto;
+        }
+        #inner-player {
+            box-sizing: border-box;
+            padding: 15px;
+            padding-top: 0;
+        }
+
+        #inner-player .hide {
+            opacity: 0.0;
+        }
+
+        #inner-player * {
+            opacity: 1.0;
+            transition: opacity 1.0s;
+        }
     </style>
 </head>
-<body>
-    <h1>Inkwell</h1>
-    <div id="container">
-        <div id="editor">
-            <textarea name="" id="gameText" cols="30" rows="10" placeholder="text goes here"></textarea>
-        </div>
-        <div id="player">
-            <div id="inner-player"></div>
-        </div>
-    </div>
-    <div>
-        <button id="submitme">Submit</button>
-        <h3>Errors</h3>
-        <pre id="error-display">
-        </pre>
-        <h3>Warnings</h3>
-        <pre id="warning-display">
 
-        </pre>
+<body>
+    <div id="super-container">
+        <div style="display:flex">
+            <h3>Inkwell</h3>
+        </div>
+        <div id="container">
+            <div id="editor">
+                <div id="inner-editor">
+                    <textarea name="" id="gameText" placeholder="text goes here"></textarea>
+                </div>
+                <div id="editor-panel">
+                    <button id="submitme">Submit</button>
+                    <h3>Errors</h3>
+                    <pre id="error-display"></pre>
+                    <h3>Warnings</h3>
+                    <pre id="warning-display"></pre>
+                </div>
+            </div>
+            <div id="player">
+                <div id="inner-player"></div>
+            </div>
+        </div>
     </div>
     <script type="text/javascript" src="https://unpkg.com/inkjs"></script>
     <script>
@@ -75,15 +123,15 @@
         class Compiler {
             ready = false;
             worker = null;
-            init = (onComplete = () => {}) => {
+            init = (onComplete = () => { }) => {
                 return new Promise((resolve, reject) => {
                     this.worker = new Worker("worker.js");
                     this.ready = false;
                     this.worker.onmessage = (e) => {
-                        if(e.data === "ready"){
+                        if (e.data === "ready") {
                             this.ready = true;
                             resolve();
-                        } else if(this.ready){
+                        } else if (this.ready) {
                             onComplete(e.data);
                         }
                     }
@@ -95,13 +143,13 @@
 
         }
         const a = new Compiler();
-        a.init(response => { 
+        a.init(response => {
             console.log(response)
             console.log(response.story.globalTags);
-            if(response.errors.length > 0 || response.warnings.length > 0){
+            if (response.errors.length > 0 || response.warnings.length > 0) {
                 console.log("Errors", response.errors);
                 $("#error-display").text(response.errors.join('\n'))
-                
+
                 console.log("Warnings", response.warnings);
                 $("#warning-display").text(response.warnings.join('\n'))
             } else {
@@ -110,20 +158,20 @@
                 // story = new inkjs.Story(response.story)
                 processStoryContent(response.story);
                 $("#error-display").text("");
-                
+
                 console.log("Warnings", response.warnings);
                 $("#warning-display").text("");
             }
         })
         const textArea = document.getElementById("gameText");
-        textArea.value  = localStorage.getItem("text") || "";
-        const editor = CodeMirror.fromTextArea(textArea, { lineNumbers: true, theme:"ambiance"})
+        textArea.value = localStorage.getItem("text") || "";
+        const editor = CodeMirror.fromTextArea(textArea, { viewportMargin: Infinity, lineWrapping: true, lineNumbers: true, theme: "ambiance" })
         $("#submitme").click(() => {
             console.log("CLICK");
-            if(a.ready){
+            if (a.ready) {
                 console.log("Submit");
                 editor.save();
-                
+
                 var text = $("#gameText").val()
                 localStorage.setItem("text", text);
                 console.log(text);
@@ -131,29 +179,29 @@
             }
         })
 
-        function contentBottomEdgeY(){
+        function contentBottomEdgeY() {
             return 0;
         }
-        function showAfter(delay, element){
+        function showAfter(delay, element) {
             $(element).addClass("hide");
             setTimeout(() => $(element).removeClass("hide"), delay);
         }
 
-        function processStoryContent(storyContent){
+        function processStoryContent(storyContent) {
             $("#inner-player").empty();
             var story = new inkjs.Story(storyContent);
             // process global tags will go here
 
             var outerStoryContainer = $("#inner-player");
             var storyContainer = $("#inner-player");
-        
+
             continueStory(true);
-            function continueStory(firstTime){
+            function continueStory(firstTime) {
                 var paragraphIndex = 0;
                 var delay = 0.0;
 
-                var previousBottomEdge = firstTime? 0 : contentBottomEdgeY();
-                while(story.canContinue){
+                var previousBottomEdge = firstTime ? 0 : contentBottomEdgeY();
+                while (story.canContinue) {
                     var paragraphText = story.Continue();
                     var tags = story.currentTags;
 
@@ -166,10 +214,10 @@
                     showAfter(delay, paragraph);
                     delay += 200.0;
                 }
-                story.currentChoices.forEach(function(choice){
+                story.currentChoices.forEach(function (choice) {
                     const element = $(`<p class="choice"><a href="">${choice.text}</a></p>`);
                     storyContainer.append(
-                        element  
+                        element
                     );
                     showAfter(delay, element);
                     delay += 200;
@@ -180,12 +228,21 @@
                         story.ChooseChoiceIndex(choice.index);
                         continueStory();
                     });
+                    $("#player").animate({ scrollTop: $("#inner-player").height() }, "slow");
+                    return false;
                 });
 
             }
         }
+        const startup = setInterval(() => {
+            if(a.ready){
+                clearInterval(startup)
+                var text = $("#gameText").val()
+                a.submit(text);
+            }
+        }, 500)
 
-        
     </script>
 </body>
+
 </html>
