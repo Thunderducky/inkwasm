@@ -9,6 +9,7 @@
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"
         integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="codemirror.css">
+    <script type="text/javascript" src="/loadSample.js"></script>
     <link rel="stylesheet" href="editor.css">
     <script type="text/javascript" src="codemirror.js"> </script>
     <style>
@@ -96,8 +97,9 @@
 
 <body>
     <div id="super-container">
-        <div style="display:flex">
-            <h3>Inkwell</h3>
+        <div style="display:flex; justify-content: space-between">
+            <h3>Inkwell <img id="load-icon" src="/830_1.gif" alt=""></h3>
+            <button id="sample" style="margin: 10px">Load Sample</button>
         </div>
         <div id="container">
             <div id="editor">
@@ -133,11 +135,13 @@
                             resolve();
                         } else if (this.ready) {
                             onComplete(e.data);
+                            $("#load-icon").fadeTo("fast", 0);
                         }
                     }
                 })
             }
             submit = (text) => {
+                $("#load-icon").fadeTo("fast", 1);
                 this.worker.postMessage(text);
             }
 
@@ -177,6 +181,12 @@
                 console.log(text);
                 a.submit(text);
             }
+        })
+
+        $("#sample").click(function(){
+            const text = getSample();
+            editor.setValue(text);
+            a.submit(text)
         })
 
         function contentBottomEdgeY() {
